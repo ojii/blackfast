@@ -43,29 +43,41 @@ secho = partial(context_out, original=click.secho)
 
 
 @click.command()
-@click.argument("socket_path")
 def main(socket_path: str) -> None:
-    asyncio.run(server(socket_path))
+    asyncio.run(server("blackfast.socket"))
 
 
 async def server(socket_path: str) -> None:
     srv = await asyncio.start_unix_server(connected, socket_path)
-    async with srv:
-        await srv.serve_forever()
+    print(f"Running at {socket_path}")
+    await srv.serve_forever()
+
+
+async def send_return_code(writer: asyncio.StreamWriter, num: int) -> None:
+    writer.write(b"\x00")
+    writer.write(struct.pack("<i", num))
+    writer.write(b"\n")
+    await writer.drain()
+    writer.close()
 
 
 async def connected(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
     STDOUT.set(writer)
     try:
-        data = json.loads(await reader.readline())
+        args = json.loads(await reader.readline())
     except asyncio.IncompleteReadError:
         return writer.close()
-    return_code = await api(**data)
-    writer.write(b"\x00")
-    writer.write(struct.pack("b", return_code))
-    writer.write(b"\n")
-    await writer.drain()
-    writer.close()
+    try:
+        ctx = black.main.make_context("blackfast", args)
+    except click.ClickException as exc:
+        writer.write(f"{exc.format_message()}\n".encode("utf-8"))
+        return await send_return_code(writer, -1)
+    try:
+        return_code = await api(**ctx.params)
+    except Exception as e:
+        writer.write(f"INTERNAL ERROR: {e}\n".encode("utf-8"))
+        return await send_return_code(writer, -1)
+    return await send_return_code(writer, return_code)
 
 
 async def api(

@@ -21,11 +21,13 @@ Python startup is slow. So we don't start Python to use black, instead run a ser
 You'll need Python 3.7
 
 1. Make sure black 18.6b2 is installed. 
-2. Run `python server.py <path-to-socket>`. 
+2. Run `python server.py`.
 3. Run `cargo build --release`
-4. Run `target/release/blackfast <path-to-socket> <normal-args-you-would-pass-to-black>`
+4. Run `target/release/blackfast <normal-args-you-would-pass-to-black>`
 
 Alternatively for 3 and 4 you can use `cargo run <...args>`.
+
+`server.py` and `blackfast` must be run in the same directory for now.
 
 ## What needs to be done for this to be useful?
 
