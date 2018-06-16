@@ -40,10 +40,14 @@ def context_out(*args, original, **kwargs):
 out = black.out = partial(context_out, original=black.out)
 err = black.err = partial(context_out, original=black.err)
 secho = partial(context_out, original=click.secho)
+black.main = click.option("--work-dir", required=True)(black.main)
+for param in black.main.params:
+    if param.name == "src":
+        param.type.exists = False
 
 
 @click.command()
-def main(socket_path: str) -> None:
+def main() -> None:
     asyncio.run(server("blackfast.socket"))
 
 
@@ -83,6 +87,7 @@ async def connected(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) 
 async def api(
     *,
     src: Iterable[str],
+    work_dir: str,
     line_length: int = black.DEFAULT_LINE_LENGTH,
     check: bool = False,
     diff: bool = False,
@@ -98,6 +103,7 @@ async def api(
 ) -> int:
     """The uncompromising code formatter."""
     src = tuple(src)
+    work_dir = Path(work_dir)
     loop = asyncio.get_event_loop()
     write_back = black.WriteBack.from_configuration(check=check, diff=diff)
     mode = black.FileMode.from_configuration(
@@ -116,10 +122,10 @@ async def api(
         err(f"Invalid regular expression for exclude given: {exclude!r}")
         return 2
     report = black.Report(check=check, quiet=quiet, verbose=verbose)
-    root = black.find_project_root(src)
+    root = black.find_project_root((work_dir,))
     sources: Set[Path] = set()
     for s in src:
-        p = Path(s)
+        p = work_dir / Path(s)
         if p.is_dir():
             sources.update(
                 black.gen_python_files_in_dir(
