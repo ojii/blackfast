@@ -1,8 +1,10 @@
 import asyncio
 import json
 import re
+import socket
 import struct
 import sys
+import time
 from concurrent.futures import ProcessPoolExecutor
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -10,11 +12,29 @@ from functools import partial
 from pathlib import Path
 from typing import *
 
+import appdirs
 import black
 import click
+import daemoniker
+
+p = lambda b, n: str((Path(b) / n).absolute())
+
+
+def ensure(*paths: str) -> None:
+    for path in paths:
+        path = Path(path)
+        if not path.exists():
+            path.mkdir(parents=True)
+
+
+dirs = appdirs.AppDirs("blackfast")
+ensure(dirs.user_data_dir, dirs.user_log_dir)
+STDOUT_LOG = p(dirs.user_log_dir, "stdout.log")
+STDERR_LOG = p(dirs.user_log_dir, "stderr.log")
+SOCKET_PATH = p(dirs.user_data_dir, "blackfast.socket")
+PID_FILE = p(dirs.user_data_dir, "blackfast.pid")
 
 PROCESS_POOL = ProcessPoolExecutor()
-
 
 STDOUT = ContextVar("STDOUT", default=sys.stdout)
 
@@ -36,19 +56,14 @@ def context_out(*args, original, **kwargs):
     original(*args, **kwargs, file=ClickFile(STDOUT.get()))
 
 
-# Monkeypatching :(
-out = black.out = partial(context_out, original=black.out)
-err = black.err = partial(context_out, original=black.err)
-secho = partial(context_out, original=click.secho)
-black.main = click.option("--work-dir", required=True)(black.main)
-for param in black.main.params:
-    if param.name == "src":
-        param.type.exists = False
-
-
-@click.command()
-def main() -> None:
-    asyncio.run(server("blackfast.socket"))
+def monkeypatch():
+    black.out = partial(context_out, original=black.out)
+    black.err = partial(context_out, original=black.err)
+    black.secho = partial(context_out, original=click.secho)
+    black.main = click.option("--work-dir", required=True)(black.main)
+    for param in black.main.params:
+        if param.name == "src":
+            param.type.exists = False
 
 
 async def server(socket_path: str) -> None:
@@ -110,16 +125,16 @@ async def api(
         py36=py36, pyi=pyi, skip_string_normalization=skip_string_normalization
     )
     if config and verbose:
-        out(f"Using configuration from {config}.", bold=False, fg="blue")
+        black.out(f"Using configuration from {config}.", bold=False, fg="blue")
     try:
         include_regex = black.re_compile_maybe_verbose(include)
     except re.error:
-        err(f"Invalid regular expression for include given: {include!r}")
+        black.err(f"Invalid regular expression for include given: {include!r}")
         return 2
     try:
         exclude_regex = black.re_compile_maybe_verbose(exclude)
     except re.error:
-        err(f"Invalid regular expression for exclude given: {exclude!r}")
+        black.err(f"Invalid regular expression for exclude given: {exclude!r}")
         return 2
     report = black.Report(check=check, quiet=quiet, verbose=verbose)
     root = black.find_project_root((work_dir,))
@@ -136,10 +151,10 @@ async def api(
             # if a file was explicitly given, we don't care about its extension
             sources.add(p)
         else:
-            err(f"invalid path: {s}")
+            black.err(f"invalid path: {s}")
     if len(sources) == 0:
         if verbose or not quiet:
-            out("No paths given. Nothing to do 😴")
+            black.out("No paths given. Nothing to do 😴")
         return 0
 
     if len(sources) == 1:
@@ -164,10 +179,43 @@ async def api(
         )
     if verbose or not quiet:
         bang = "💥 💔 💥" if report.return_code else "✨ 🍰 ✨"
-        out(f"All done! {bang}")
-        secho(str(report), err=True)
+        black.out(f"All done! {bang}")
+        black.secho(str(report), err=True)
     return report.return_code
 
 
+def wait_connectable(timeout: Union[int, float]) -> None:
+    end = time.monotonic() + timeout
+    while end > time.monotonic():
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock.connect(SOCKET_PATH)
+            sock.close()
+            return
+        except:
+            pass
+    raise Exception("Server did not start")
+
+
+@click.group()
+def cli() -> None:
+    pass
+
+
+@cli.command("start")
+def start() -> None:
+    with daemoniker.Daemonizer() as (_, daemonizer):
+        is_parent, *_ = daemonizer(PID_FILE)
+        if is_parent:
+            wait_connectable(10)
+    monkeypatch()
+    asyncio.run(server(str(SOCKET_PATH)))
+
+
+@cli.command("stop")
+def stop() -> None:
+    daemoniker.send(PID_FILE, daemoniker.SIGINT)
+
+
 if __name__ == "__main__":
-    main()
+    cli()
