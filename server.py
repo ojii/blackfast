@@ -17,6 +17,8 @@ import black
 import click
 import daemoniker
 
+import ipcserver
+
 p = lambda b, n: str((Path(b) / n).absolute())
 
 
@@ -32,6 +34,7 @@ ensure(dirs.user_data_dir, dirs.user_log_dir)
 STDOUT_LOG = p(dirs.user_log_dir, "stdout.log")
 STDERR_LOG = p(dirs.user_log_dir, "stderr.log")
 SOCKET_PATH = p(dirs.user_data_dir, "blackfast.socket")
+PIPE_NAME = "blackfast"
 PID_FILE = p(dirs.user_data_dir, "blackfast.pid")
 
 PROCESS_POOL = ProcessPoolExecutor()
@@ -66,10 +69,8 @@ def monkeypatch():
             param.type.exists = False
 
 
-async def server(socket_path: str) -> None:
-    srv = await asyncio.start_unix_server(connected, socket_path)
-    print(f"Running at {socket_path}")
-    await srv.serve_forever()
+async def server() -> None:
+    await ipcserver.run(SOCKET_PATH, PIPE_NAME, connected)
 
 
 async def send_return_code(writer: asyncio.StreamWriter, num: int) -> None:
@@ -209,7 +210,7 @@ def start() -> None:
         if is_parent:
             wait_connectable(10)
     monkeypatch()
-    asyncio.run(server(str(SOCKET_PATH)))
+    asyncio.run(server())
 
 
 @cli.command("stop")

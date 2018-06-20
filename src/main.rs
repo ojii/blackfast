@@ -7,10 +7,16 @@ use std::io::Write;
 use std::str;
 
 use std::env;
+#[cfg(windows)]
+use std::fs::File;
 use std::io::BufReader;
+#[cfg(not(windows))]
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 use std::process::Command;
+
+#[cfg(windows)]
+const PIPE_NAME: &'static str = "\\\\.\\pipe\\blackfast";
 
 #[inline]
 fn get_retcode(a: u8, b: u8, c: u8, d: u8) -> i32 {
@@ -39,7 +45,9 @@ fn maybe_start(p: &PathBuf) {
             .arg("server.py")
             .arg("start")
             .spawn()
-            .expect("failed to start server").wait().expect("failed to start server");
+            .expect("failed to start server")
+            .wait()
+            .expect("failed to start server");
     }
 }
 
@@ -48,16 +56,19 @@ fn run() -> Result<(), i32> {
         Ok(p) => maybe_start(&p),
         Err(_) => return Err(-1),
     }
-    let socket = match get_socket() {
-        Ok(p) => p,
-        Err(_) => return Err(-1),
-    };
     let mut args: Vec<String> = env::args().skip(1).collect();
     let mut full_args: Vec<String> = Vec::with_capacity(args.len() + 2);
     full_args.push(String::from("--work-dir"));
     full_args.push(String::from(env::current_dir().unwrap().to_str().unwrap()));
     full_args.append(&mut args);
     let request = json!(full_args);
+
+    #[cfg(not(windows))]
+    let socket = match get_socket() {
+        Ok(p) => p,
+        Err(_) => return Err(-1),
+    };
+    #[cfg(not(windows))]
     let mut stream = match UnixStream::connect(socket) {
         Ok(sock) => sock,
         Err(err) => {
@@ -65,6 +76,12 @@ fn run() -> Result<(), i32> {
             return Err(-1);
         }
     };
+    #[cfg(windows)]
+    let mut stream = match File::open(PIPE_NAME) {
+        Ok(f) => f,
+        Err(err) => return Err(-1),
+    };
+
     stream
         .write_all(format!("{}\n", request).as_bytes())
         .unwrap();
