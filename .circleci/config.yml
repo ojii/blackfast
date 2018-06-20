@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "jobs": {
+    "build": {
+      "docker": [
+        {
+          "image": "circleci/python:3.7-rc-stretch"
+        }
+      ],
+      "steps": [
+        "checkout",
+        {
+          "restore_cache": {
+            "key": "project-cache"
+          }
+        },
+        {
+          "run": {
+            "name": "Install dependencies",
+            "command": "\n        sudo apt update\n        sudo apt install build-essential -y\n        "
+          }
+        },
+        {
+          "run": {
+            "name": "Install rust",
+            "command": "\n        curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain nightly\n        echo 'export PATH=${HOME}/.cargo/bin:${PATH}' >> $BASH_ENV\n        source $BASH_ENV\n        rustup update\n        rustup install nightly\n        rustup default nightly\n        rustup component add rustfmt-preview\n        "
+          }
+        },
+        {
+          "run": {
+            "name": "Check Formatting",
+            "command": "rustup run nightly cargo fmt -- --check"
+          }
+        },
+        {
+          "run": {
+            "name": "Build Debug",
+            "command": "\n        cc --version\n        rustup run nightly cargo build\n        "
+          }
+        },
+        {
+          "run": {
+            "name": "Build Release",
+            "command": "rustup run nightly cargo build --release"
+          }
+        },
+        {
+          "run": {
+            "name": "Run Tests",
+            "command": "rustup run nightly cargo test"
+          }
+        },
+        {
+          "save_cache": {
+            "key": "project-cache",
+            "paths": [
+              "~/.cargo",
+              "./target"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

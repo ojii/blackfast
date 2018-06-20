@@ -4,3 +4,4 @@
 *.socket
 env
 .idea
+.mypy_cache
