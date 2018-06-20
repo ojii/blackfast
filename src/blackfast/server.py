@@ -17,7 +17,7 @@ import black
 import click
 import daemoniker
 
-import ipcserver
+from . import ipcserver
 
 p = lambda b, n: str((Path(b) / n).absolute())
 

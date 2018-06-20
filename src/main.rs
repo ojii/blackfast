@@ -41,8 +41,9 @@ fn get_pidfile() -> Result<PathBuf, ()> {
 
 fn maybe_start(p: &PathBuf) {
     if !p.exists() {
-        Command::new("python")
-            .arg("server.py")
+        Command::new("poetry")
+            .arg("run")
+            .arg("blackfast-server")
             .arg("start")
             .spawn()
             .expect("failed to start server")
