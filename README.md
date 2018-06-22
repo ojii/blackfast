@@ -18,22 +18,19 @@ Python startup is slow. So we don't start Python to use black, instead run a ser
 
 ## How to run this experiment
 
-You'll need Python 3.7
+You'll need Python 3.7 and poetry.
 
-1. Make sure black 18.6b2 is installed. 
-2. Run `python server.py`.
+1. Run `poetry install` or `poetry develop`.
 3. Run `cargo build --release`
 4. Run `target/release/blackfast <normal-args-you-would-pass-to-black>`
 
 Alternatively for 3 and 4 you can use `cargo run <...args>`.
 
-`server.py` and `blackfast` must be run in the same directory for now.
-
 ## What needs to be done for this to be useful?
 
-- [ ] Make it work on Windows/any platform
-- [ ] Manage starting/running the server automatically. Running `blackfast` should start the server if not running or use an already running one. 
-- [ ] Move the socket to a "well known" location (appdirs?cachedir?) so it doesn't need to be provided. This needs to work with more than one black version on a single system.
+- [?] Make it work on Windows/any platform (Maybe done?)
+- [?] Manage starting/running the server automatically. Running `blackfast` should start the server if not running or use an already running one. 
+- [x] Move the socket to a "well known" location (appdirs?cachedir?) so it doesn't need to be provided. This needs to work with more than one black version on a single system.
 - [ ] Make it installable (how to handle the rust part?!)
 - [ ] Handle errors
 - [ ] Add support for styled output
