@@ -6,3 +6,6 @@ __pycache__
 env
 .idea
 .mypy_cache
+.*
+dist/
+*.egg-info

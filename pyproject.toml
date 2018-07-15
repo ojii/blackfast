@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "blackfast"
-version = "2018.06.1"
+version = "2018.07.1"
 description = ""
 authors = ["Jonas Obrist <jonas.obrist@hde.co.jp>"]
 
