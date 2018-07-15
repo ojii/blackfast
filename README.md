@@ -24,7 +24,7 @@ Python startup is slow. So we don't start Python to use black, instead run a ser
 
 ## How to run this experiment
 
-You'll need Python 3.7 and poetry.
+You'll need Python 3.7, poetry and rust nightly.
 
 1. Run `poetry install` or `poetry develop`.
 3. Run `cargo build --release`
