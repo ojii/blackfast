@@ -1,0 +1,9 @@
+repos:
+-   repo: https://github.com/ambv/black
+    rev: 18.6b4
+    hooks:
+    - id: black
+-   repo: git://github.com/doublify/pre-commit-rust
+    sha: master
+    hooks:
+    -   id: fmt
