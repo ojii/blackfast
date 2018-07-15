@@ -10,11 +10,11 @@ use std::env;
 #[cfg(windows)]
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Read;
 #[cfg(not(windows))]
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
 use std::process::Command;
-use std::io::Read;
 
 #[cfg(windows)]
 const PIPE_NAME: &'static str = "\\\\.\\pipe\\blackfast";
@@ -87,17 +87,15 @@ fn run() -> Result<(), i32> {
     let request = json!(full_args);
     let mut stream = match connect() {
         Ok(stream) => stream,
-        Err(_) => {
-            match std::fs::remove_file(&  pidfile) {
-                Ok(_) => {
-                    maybe_start(&pidfile);
-                    match connect() {
-                        Ok(stream) => stream,
-                        Err(_) => return Err(-1),
-                    }
+        Err(_) => match std::fs::remove_file(&pidfile) {
+            Ok(_) => {
+                maybe_start(&pidfile);
+                match connect() {
+                    Ok(stream) => stream,
+                    Err(_) => return Err(-1),
                 }
-                Err(_) => return Err(-1),
             }
+            Err(_) => return Err(-1),
         },
     };
 
