@@ -10,6 +10,7 @@ use std::env;
 #[cfg(windows)]
 use std::fs::File;
 use std::io::BufReader;
+use std::io::Read;
 #[cfg(not(windows))]
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
@@ -52,35 +53,50 @@ fn maybe_start(p: &PathBuf) {
     }
 }
 
-fn run() -> Result<(), i32> {
-    match get_pidfile() {
-        Ok(p) => maybe_start(&p),
-        Err(_) => return Err(-1),
+#[cfg(not(windows))]
+fn connect() -> Result<impl Read + Write, ()> {
+    let socket = match get_socket() {
+        Ok(p) => p,
+        Err(_) => return Err(()),
+    };
+    match UnixStream::connect(socket) {
+        Ok(sock) => Ok(sock),
+        Err(_) => Err(()),
     }
+}
+
+#[cfg(windows)]
+fn connect() -> Result<impl Read + Write, ()> {
+    match File::open(PIPE_NAME) {
+        Ok(f) => Ok(f),
+        Err(err) => return Err(()),
+    }
+}
+
+fn run() -> Result<(), i32> {
+    let pidfile = match get_pidfile() {
+        Ok(p) => p,
+        Err(_) => return Err(-1),
+    };
+    maybe_start(&pidfile);
     let mut args: Vec<String> = env::args().skip(1).collect();
     let mut full_args: Vec<String> = Vec::with_capacity(args.len() + 2);
     full_args.push(String::from("--work-dir"));
     full_args.push(String::from(env::current_dir().unwrap().to_str().unwrap()));
     full_args.append(&mut args);
     let request = json!(full_args);
-
-    #[cfg(not(windows))]
-    let socket = match get_socket() {
-        Ok(p) => p,
-        Err(_) => return Err(-1),
-    };
-    #[cfg(not(windows))]
-    let mut stream = match UnixStream::connect(socket) {
-        Ok(sock) => sock,
-        Err(err) => {
-            eprintln!("{}", err);
-            return Err(-1);
-        }
-    };
-    #[cfg(windows)]
-    let mut stream = match File::open(PIPE_NAME) {
-        Ok(f) => f,
-        Err(err) => return Err(-1),
+    let mut stream = match connect() {
+        Ok(stream) => stream,
+        Err(_) => match std::fs::remove_file(&pidfile) {
+            Ok(_) => {
+                maybe_start(&pidfile);
+                match connect() {
+                    Ok(stream) => stream,
+                    Err(_) => return Err(-1),
+                }
+            }
+            Err(_) => return Err(-1),
+        },
     };
 
     stream

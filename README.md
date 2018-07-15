@@ -26,12 +26,16 @@ You'll need Python 3.7 and poetry.
 
 Alternatively for 3 and 4 you can use `cargo run <...args>`.
 
+## How to build a wheel
+
+1. Run `python build.py`
+
 ## What needs to be done for this to be useful?
 
 - [?] Make it work on Windows/any platform (Maybe done?)
 - [?] Manage starting/running the server automatically. Running `blackfast` should start the server if not running or use an already running one. 
 - [x] Move the socket to a "well known" location (appdirs?cachedir?) so it doesn't need to be provided. This needs to work with more than one black version on a single system.
-- [ ] Make it installable (how to handle the rust part?!)
+- [x] Make it installable (how to handle the rust part?!)
 - [ ] Handle errors
 - [ ] Add support for styled output
 - [ ] Eventually: Don't read/write the cache on each request.
