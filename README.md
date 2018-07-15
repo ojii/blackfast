@@ -2,15 +2,21 @@
 
 This is experimental. It will probably not work on most platforms. Everything needs to be done manually.
 
-## What/Why
+## Benchmarks
 
-This rather silly implementation speeds up the runtime of [black](https://github.com/ambv/black) by up to 10x in some of my tests.
+These are generated with `tools/benchmark.py`. 
 
-Running black on (an already formatted, cached) server.py in this repository takes ~170ms on my machine. Using blackfast it takes ~10ms.
 
-Running black on the Python 3.7 standard library (unformatted, uncached) takes ~3m49s with black, ~3m34s with blackfast.
-
-In other words, it helps for small amounts of works much more than if there's lots to do.
+```text
+name                        mean    median    stdev
+-----------------------  -------  --------  -------
+black_cached             0.17876   0.18076  0.00433
+black_uncached           0.17931   0.17946  0.00514
+blackfast_cached_cold    0.89011   0.86907  0.03016
+blackfast_uncached_cold  0.92398   0.93126  0.04577
+blackfast_cached_hot     0.04327   0.04298  0.00097
+blackfast_uncached_hot   0.04538   0.04424  0.00365
+```
 
 ## How it works
 
