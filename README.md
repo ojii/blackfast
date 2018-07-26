@@ -1,6 +1,19 @@
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![Python Version:3.7](https://img.shields.io/badge/Python-3.7-brightgreen.svg)](https://www.python.org/)
+[![Packaging:poetry](https://img.shields.io/badge/Packaging-poetry-brightgreen.svg)](https://poetry.eustace.io/)
+[![Rust:Nightly](https://img.shields.io/badge/Rust-Nightly-brightgreen.svg)](https://www.rust-lang.org/)
+
 # Experiment to make black faster
 
 This is experimental. It will probably not work on most platforms. Everything needs to be done manually.
+
+# Build Status
+
+| OS | Status |
+| --- | --- |
+| Linux | [![CircleCI](https://circleci.com/gh/ojii/blackfast.svg?style=svg)](https://circleci.com/gh/ojii/blackfast) |
+| MacOS | [![Build Status](https://travis-ci.com/ojii/blackfast.svg?branch=master)](https://travis-ci.com/ojii/blackfast) |
+| Windows | [![Build status](https://ci.appveyor.com/api/projects/status/0wedeehfetvi7fef/branch/master?svg=true)](https://ci.appveyor.com/project/ojii/blackfast/branch/master) |
 
 ## Benchmarks
 
