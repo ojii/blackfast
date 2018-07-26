@@ -16,7 +16,9 @@ from py._path.local import LocalPath
 
 @pytest.fixture(scope="session")
 def wheel(root: Path) -> Path:
-    info = json.loads(check_output([sys.executable, root / "build.py", "-j"], cwd=root))
+    info = json.loads(
+        check_output([sys.executable, str(root / "build.py"), "-j"], cwd=root)
+    )
     return Path(info["path"])
 
 
