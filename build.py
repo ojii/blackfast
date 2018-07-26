@@ -1,27 +1,19 @@
 import hashlib
+import json
 import stat
 from base64 import urlsafe_b64encode
+from functools import partial
 from pathlib import Path
-from subprocess import check_call
+from subprocess import check_call, DEVNULL
 from zipfile import ZipFile, ZipInfo
 
+import click
 from poetry.masonry.utils.tags import get_platform
 from poetry.utils.helpers import normalize_version
 from pytoml import load
 
 
-def foo():
-    zin = zipfile.ZipFile("archive.zip", "r")
-    zout = zipfile.ZipFile("archve_new.zip", "w")
-    for item in zin.infolist():
-        buffer = zin.read(item.filename)
-        if item.filename[-4:] != ".exe":
-            zout.writestr(item, buffer)
-    zout.close()
-    zin.close()
-
-
-def patch_wheel(version: str):
+def patch_wheel(version: str) -> Path:
     src_path = Path.cwd() / "dist" / f"blackfast-{version}-py3-none-any.whl"
     wheel_name = f"blackfast-{version}-py3-none-{get_platform().replace('.', '_').replace('-', '_')}.whl"
     dst_path = Path.cwd() / "dist" / wheel_name
@@ -51,16 +43,26 @@ def patch_wheel(version: str):
             else:
                 dst.writestr(info, src.read(info.filename))
     src_path.unlink()
+    return dst_path
 
 
-def main():
-    check_call(["poetry", "build", "-f", "wheel"])
+@click.command()
+@click.option("-j", "--json-output", is_flag=True, default=False)
+def main(json_output: bool) -> None:
+    if json_output:
+        call = partial(check_call, stdout=DEVNULL)
+    else:
+        call = check_call
+    call(["poetry", "build", "-f", "wheel"])
     with open("pyproject.toml") as fobj:
         config = load(fobj)
         version = normalize_version(config["tool"]["poetry"]["version"])
-    check_call(["cargo", "build", "--release"])
-    patch_wheel(version)
-    print("Done ✨")
+    call(["cargo", "build", "--release"])
+    path = patch_wheel(version)
+    if json_output:
+        print(json.dumps({"version": version, "path": str(path)}))
+    else:
+        print("Done ✨")
 
 
 if __name__ == "__main__":

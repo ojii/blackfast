@@ -3,7 +3,7 @@ repos:
     rev: 18.6b4
     hooks:
     - id: black
--   repo: git://github.com/doublify/pre-commit-rust
-    sha: master
-    hooks:
-    -   id: fmt
+#-   repo: git://github.com/doublify/pre-commit-rust
+#    rev: a21a2b12e7f2a0034ff0a5e008c2373d2d39a3cc
+#    hooks:
+#    -   id: fmt

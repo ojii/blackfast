@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 #[cfg(windows)]
-const PIPE_NAME: &'static str = "\\\\.\\pipe\\blackfast";
+const DEFAULT_PIPE_NAME: &'static str = "\\\\.\\pipe\\blackfast";
 
 #[inline]
 fn get_retcode(a: u8, b: u8, c: u8, d: u8) -> i32 {
@@ -28,23 +28,36 @@ fn get_retcode(a: u8, b: u8, c: u8, d: u8) -> i32 {
     number as i32
 }
 
-fn user_data_dir(filename: &str) -> Result<PathBuf, ()> {
+fn user_data_dir(filename: String) -> Result<PathBuf, ()> {
     appdirs::user_data_dir(Some("blackfast"), None, false).map(|p| p.join(filename))
 }
 
+fn get_env_or_user_data_dir(name: &str, ext: &str) -> Result<PathBuf, ()> {
+    match env::var(format!("{}_{}", name.to_uppercase(), ext.to_uppercase())) {
+        Ok(val) => Ok(PathBuf::from(val)),
+        Err(_) => user_data_dir(format!("{}.{}", name, ext)),
+    }
+}
+
 fn get_socket() -> Result<PathBuf, ()> {
-    user_data_dir("blackfast.socket")
+    get_env_or_user_data_dir("blackfast", "socket")
 }
 
 fn get_pidfile() -> Result<PathBuf, ()> {
-    user_data_dir("blackfast.pid")
+    get_env_or_user_data_dir("blackfast", "pid")
+}
+
+#[cfg(windows)]
+fn get_pipe_name() -> &str {
+    match env::var("BLACKFAST_PIPE_NAME") {
+        Ok(name) => name.as_str(),
+        Err(_) => DEFAULT_PIPE_NAME,
+    }
 }
 
 fn maybe_start(p: &PathBuf) {
     if !p.exists() {
-        Command::new("poetry")
-            .arg("run")
-            .arg("blackfast-server")
+        Command::new("blackfast-server")
             .arg("start")
             .spawn()
             .expect("failed to start server")
@@ -67,7 +80,7 @@ fn connect() -> Result<impl Read + Write, ()> {
 
 #[cfg(windows)]
 fn connect() -> Result<impl Read + Write, ()> {
-    match File::open(PIPE_NAME) {
+    match File::open(get_pipe_name()) {
         Ok(f) => Ok(f),
         Err(err) => return Err(()),
     }

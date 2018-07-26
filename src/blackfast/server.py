@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import re
 import socket
 import struct
@@ -33,13 +34,28 @@ dirs = appdirs.AppDirs("blackfast")
 ensure(dirs.user_data_dir, dirs.user_log_dir)
 STDOUT_LOG = p(dirs.user_log_dir, "stdout.log")
 STDERR_LOG = p(dirs.user_log_dir, "stderr.log")
-SOCKET_PATH = p(dirs.user_data_dir, "blackfast.socket")
-PIPE_NAME = "blackfast"
-PID_FILE = p(dirs.user_data_dir, "blackfast.pid")
+DEFAULT_SOCKET_PATH = p(dirs.user_data_dir, "blackfast.socket")
+DEFAULT_PIPE_NAME = "\\\\.\\pipe\\blackfast"
+DEFAULT_PID_FILE = p(dirs.user_data_dir, "blackfast.pid")
 
 PROCESS_POOL = ProcessPoolExecutor()
 
 STDOUT = ContextVar("STDOUT", default=sys.stdout)
+
+
+def get_pid_file() -> str:
+    return os.environ.get("BLACKFAST_PID", DEFAULT_PID_FILE)
+
+
+def get_socket_path() -> str:
+    path = os.environ.get("BLACKFAST_SOCKET", DEFAULT_SOCKET_PATH)
+    if len(path) > 100:
+        raise ValueError("Socket path too long")
+    return path
+
+
+def get_pipe_name() -> str:
+    return os.environ.get("BLACFAST_PIPE_NAME", DEFAULT_PIPE_NAME)
 
 
 @dataclass
@@ -70,7 +86,7 @@ def monkeypatch():
 
 
 async def server() -> None:
-    await ipcserver.run(SOCKET_PATH, PIPE_NAME, connected)
+    await ipcserver.run(get_socket_path(), get_pipe_name(), connected)
 
 
 async def send_return_code(writer: asyncio.StreamWriter, num: int) -> None:
@@ -190,7 +206,7 @@ def wait_connectable(timeout: Union[int, float]) -> None:
     while end > time.monotonic():
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         try:
-            sock.connect(SOCKET_PATH)
+            sock.connect(get_socket_path())
             sock.close()
             return
         except:
@@ -206,7 +222,7 @@ def cli() -> None:
 @cli.command("start")
 def start() -> None:
     with daemoniker.Daemonizer() as (_, daemonizer):
-        is_parent, *_ = daemonizer(PID_FILE)
+        is_parent, *_ = daemonizer(get_pid_file())
         if is_parent:
             wait_connectable(10)
     monkeypatch()
@@ -215,7 +231,7 @@ def start() -> None:
 
 @cli.command("stop")
 def stop() -> None:
-    daemoniker.send(PID_FILE, daemoniker.SIGINT)
+    daemoniker.send(get_pid_file(), daemoniker.SIGINT)
 
 
 if __name__ == "__main__":
