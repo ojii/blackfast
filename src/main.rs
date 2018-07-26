@@ -48,10 +48,10 @@ fn get_pidfile() -> Result<PathBuf, ()> {
 }
 
 #[cfg(windows)]
-fn get_pipe_name() -> &str {
+fn get_pipe_name() -> String {
     match env::var("BLACKFAST_PIPE_NAME") {
-        Ok(name) => name.as_str(),
-        Err(_) => DEFAULT_PIPE_NAME,
+        Ok(name) => name,
+        Err(_) => String::from(DEFAULT_PIPE_NAME),
     }
 }
 
