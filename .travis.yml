@@ -1,11 +1,15 @@
 sudo: false
+language: rust
+rust:
+  - nightly
 os:
   - linux
   - osx
 
 before_install:
+  - git clone git://github.com/pyenv/pyenv-update.git ~/.pyenv/plugins/pyenv-update
+  - pyenv update
   - pyenv install 3.7.0
-  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 
 install:
   - poetry install -v
