@@ -3,36 +3,16 @@ language: rust
 rust:
   - nightly
 os:
-  - linux
   - osx
-addons:
-  apt:
-    update: true
-    packages:
-    - make
-    - build-essential
-    - libssl-dev
-    - zlib1g-dev
-    - libbz2-dev
-    - libreadline-dev
-    - libsqlite3-dev
-    - wget
-    - curl
-    - llvm
-    - libncurses5-dev
-    - libncursesw5-dev
-    - xz-utils
-    - tk-dev
-    - libffi-dev
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew upgrade pyenv; fi
-  - if [[ "$TRAVIS_OS_NAME" != "osx" ]]; then cd /opt/pyenv/plugins/python-build/../.. && git pull origin master; fi
+  - brew update && brew upgrade pyenv
   - pyenv install 3.7.0
+  - pyenv global 3.7.0
   - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | $(pyenv root)/shims/python3.7
 
 install:
-  - poetry install -v
+  - $(pyenv root)/shims/poetry install -v
 
 script:
   - cargo test --verbose
-  - poetry run pytest
+  - $(pyenv root)/shims/poetry run pytest
