@@ -5,7 +5,7 @@ rust:
 os:
   - osx
 before_install:
-  - brew update && brew install python
+  - brew update && brew upgrade python
   - curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python3.7
 
 install:

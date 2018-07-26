@@ -46,6 +46,9 @@ class Env:
     def run(self, cmd: str, args: Tuple[str]):
         if sys.platform == "win32":
             cmd += ".exe"
+            path = f"{self.root / 'Scripts'};{os.environ['PATH']}"
+        else:
+            path = f"{self.root / 'bin'}:{os.environ['PATH']}"
         check_call(
             [cmd, *args],
             env={
@@ -54,7 +57,7 @@ class Env:
                 "BLACKFAST_PID": str(self.pid_path),
                 "BLACKFAST_PIPE_NAME": self.pipe_name,
                 "RUST_BACKTRACE": "1",
-                "PATH": f"{self.root / 'bin'}:{os.environ['PATH']}",
+                "PATH": path,
             },
         )
 
