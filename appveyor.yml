@@ -9,7 +9,7 @@ environment:
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
-  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin;;C:\Python37\Scripts
+  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin
   - rustc -vV
   - cargo -vV
   - C:\Python37\python.exe -m pip install -U pip

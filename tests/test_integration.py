@@ -44,6 +44,8 @@ class Env:
         self.pid_path = self.root / f"blackfast.pid"
 
     def run(self, cmd: str, args: Tuple[str]):
+        if sys.platform == "win32":
+            cmd += ".exe"
         check_call(
             [str(self.root / "bin" / cmd), *args],
             env={

@@ -39,6 +39,7 @@ fn get_env_or_user_data_dir(name: &str, ext: &str) -> Result<PathBuf, ()> {
     }
 }
 
+#[cfg(not(windows))]
 fn get_socket() -> Result<PathBuf, ()> {
     get_env_or_user_data_dir("blackfast", "socket")
 }
@@ -82,7 +83,7 @@ fn connect() -> Result<impl Read + Write, ()> {
 fn connect() -> Result<impl Read + Write, ()> {
     match File::open(get_pipe_name()) {
         Ok(f) => Ok(f),
-        Err(err) => return Err(()),
+        Err(_) => return Err(()),
     }
 }
 

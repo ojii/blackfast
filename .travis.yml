@@ -1,0 +1,15 @@
+sudo: false
+os:
+  - linux
+  - osx
+
+before_install:
+  - pyenv install 3.7.0
+  - curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+
+install:
+  - poetry install -v
+
+script:
+  - cargo test --verbose
+  - poetry run pytest
