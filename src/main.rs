@@ -19,6 +19,12 @@ use std::process::Command;
 #[cfg(windows)]
 const DEFAULT_PIPE_NAME: &'static str = "\\\\.\\pipe\\blackfast";
 
+#[cfg(windows)]
+const SERVER_BIN_NAME: &'static str = "blackfast-server.exe";
+
+#[cfg(not(windows))]
+const SERVER_BIN_NAME: &'static str = "blackfast-server";
+
 #[inline]
 fn get_retcode(a: u8, b: u8, c: u8, d: u8) -> i32 {
     let mut number = u32::from(d);
@@ -58,7 +64,7 @@ fn get_pipe_name() -> String {
 
 fn maybe_start(p: &PathBuf) {
     if !p.exists() {
-        Command::new("blackfast-server")
+        Command::new(SERVER_BIN_NAME)
             .arg("start")
             .spawn()
             .expect("failed to start server")

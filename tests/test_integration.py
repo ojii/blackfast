@@ -47,12 +47,14 @@ class Env:
         if sys.platform == "win32":
             cmd += ".exe"
         check_call(
-            [str(self.root / "bin" / cmd), *args],
+            [cmd, *args],
             env={
                 **os.environ,
                 "BLACKFAST_SOCKET": self.socket_path,
                 "BLACKFAST_PID": str(self.pid_path),
                 "BLACKFAST_PIPE_NAME": self.pipe_name,
+                "RUST_BACKTRACE": "1",
+                "PATH": f"{self.root / 'bin'}:{os.environ['PATH']}",
             },
         )
 

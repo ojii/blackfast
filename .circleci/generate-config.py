@@ -3,7 +3,7 @@
 
 def generate(cci):
     cci.job(
-        "build", image="circleci/python:3.7-rc-stretch", cache=["~/.cargo", "./target"]
+        "build", image="circleci/python:3.7-stretch", cache=["~/.cargo", "./target"]
     ).run(
         "Install dependencies",
         """
@@ -22,7 +22,15 @@ def generate(cci):
         rustup component add rustfmt-preview
         """,
     ).run(
-        "Check Formatting", "rustup run nightly cargo fmt -- --check"
+        "Install Poetry",
+        "curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | sudo python3.7",
+    ).run(
+        "Install Package", "poetry install -v"
+    ).run(
+        "Check Rust Formatting", "rustup run nightly cargo fmt -- --check"
+    ).run(
+        "Check Python Formatting",
+        "poetry run black --check src tests build.py .circleci tools",
     ).run(
         "Build Debug",
         """
@@ -32,7 +40,9 @@ def generate(cci):
     ).run(
         "Build Release", "rustup run nightly cargo build --release"
     ).run(
-        "Run Tests", "rustup run nightly cargo test"
+        "Run Rust Tests", "rustup run nightly cargo test"
+    ).run(
+        "Run Python Tests", "poetry run pytest"
     ).finalize()
 
 

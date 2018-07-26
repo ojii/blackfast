@@ -4,7 +4,7 @@
     "build": {
       "docker": [
         {
-          "image": "circleci/python:3.7-rc-stretch"
+          "image": "circleci/python:3.7-stretch"
         }
       ],
       "steps": [
@@ -28,8 +28,26 @@
         },
         {
           "run": {
-            "name": "Check Formatting",
+            "name": "Install Poetry",
+            "command": "curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | sudo python3.7"
+          }
+        },
+        {
+          "run": {
+            "name": "Install Package",
+            "command": "poetry install -v"
+          }
+        },
+        {
+          "run": {
+            "name": "Check Rust Formatting",
             "command": "rustup run nightly cargo fmt -- --check"
+          }
+        },
+        {
+          "run": {
+            "name": "Check Python Formatting",
+            "command": "poetry run black --check src tests build.py .circleci tools"
           }
         },
         {
@@ -46,8 +64,14 @@
         },
         {
           "run": {
-            "name": "Run Tests",
+            "name": "Run Rust Tests",
             "command": "rustup run nightly cargo test"
+          }
+        },
+        {
+          "run": {
+            "name": "Run Python Tests",
+            "command": "poetry run pytest"
           }
         },
         {
