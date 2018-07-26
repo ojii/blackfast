@@ -9,12 +9,12 @@ environment:
 install:
   - appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
   - rustup-init -yv --default-toolchain %channel% --default-host %target%
-  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin;C:\Python37-x64
+  - set PATH=%PATH%;%USERPROFILE%\.cargo\bin;;C:\Python37\Scripts
   - rustc -vV
   - cargo -vV
-  - python -m pip install -U pip
-  - python -m pip install poetry --pre
-  - poetry install -v
+  - C:\Python37\python.exe -m pip install -U pip
+  - C:\Python37\python.exe -m pip install poetry --pre
+  - C:\Python37\Scripts\poetry.exe install -v
 test_script:
   - cargo test --verbose
-  - poetry run pytest
+  - C:\Python37\Scripts\poetry.exe run pytest
