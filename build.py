@@ -1,6 +1,7 @@
 import hashlib
 import json
 import stat
+import sys
 from base64 import urlsafe_b64encode
 from functools import partial
 from pathlib import Path
@@ -17,9 +18,10 @@ def patch_wheel(version: str) -> Path:
     src_path = Path.cwd() / "dist" / f"blackfast-{version}-py3-none-any.whl"
     wheel_name = f"blackfast-{version}-py3-none-{get_platform().replace('.', '_').replace('-', '_')}.whl"
     dst_path = Path.cwd() / "dist" / wheel_name
+    name = "blackfast.exe" if sys.platform == "win32" else "blackfast"
     with ZipFile(src_path, "r") as src, ZipFile(dst_path, "w") as dst:
-        binary = Path.cwd() / "target" / "release" / "blackfast"
-        arcname = f"blackfast-{version}.data/scripts/blackfast"
+        binary = Path.cwd() / "target" / "release" / name
+        arcname = f"blackfast-{version}.data/scripts/{name}"
         zinfo = ZipInfo.from_file(binary, arcname)
         zinfo.external_attr |= stat.S_IXUSR
         with binary.open("rb") as fobj:
