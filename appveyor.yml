@@ -15,6 +15,7 @@ install:
   - C:\Python37\python.exe -m pip install -U pip
   - C:\Python37\python.exe -m pip install poetry --pre
   - C:\Python37\Scripts\poetry.exe install -v
+  - C:\Python37\Scripts\poetry.exe run python -m pip install -U pip
 test_script:
   - cargo test --verbose
   - C:\Python37\Scripts\poetry.exe run pytest
