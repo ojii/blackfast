@@ -16,9 +16,9 @@ from typing import *
 import appdirs
 import black
 import click
-import daemoniker
 
 from . import ipcserver
+from . import demon
 
 p = lambda b, n: str((Path(b) / n).absolute())
 
@@ -43,8 +43,8 @@ PROCESS_POOL = ProcessPoolExecutor()
 STDOUT = ContextVar("STDOUT", default=sys.stdout)
 
 
-def get_pid_file() -> str:
-    return os.environ.get("BLACKFAST_PID", DEFAULT_PID_FILE)
+def get_pid_file() -> Path:
+    return Path(os.environ.get("BLACKFAST_PID", DEFAULT_PID_FILE))
 
 
 def get_socket_path() -> str:
@@ -214,6 +214,11 @@ def wait_connectable(timeout: Union[int, float]) -> None:
     raise Exception("Server did not start")
 
 
+def run():
+    monkeypatch()
+    asyncio.run(server())
+
+
 @click.group()
 def cli() -> None:
     pass
@@ -221,17 +226,19 @@ def cli() -> None:
 
 @cli.command("start")
 def start() -> None:
-    with daemoniker.Daemonizer() as (_, daemonizer):
-        is_parent, *_ = daemonizer(get_pid_file())
-        if is_parent:
-            wait_connectable(10)
-    monkeypatch()
-    asyncio.run(server())
+    try:
+        demon.spawn(get_pid_file(), run)
+    except demon.PidExists:
+        pass
+    wait_connectable(10)
 
 
 @cli.command("stop")
 def stop() -> None:
-    daemoniker.send(get_pid_file(), daemoniker.SIGINT)
+    try:
+        demon.kill(get_pid_file())
+    except demon.PidDoesNotExist:
+        pass
 
 
 if __name__ == "__main__":

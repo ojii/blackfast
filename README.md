@@ -3,9 +3,9 @@
 [![Packaging:poetry](https://img.shields.io/badge/Packaging-poetry-brightgreen.svg)](https://poetry.eustace.io/)
 [![Rust:Nightly](https://img.shields.io/badge/Rust-Nightly-brightgreen.svg)](https://www.rust-lang.org/)
 
-# Experiment to make black faster
+# blackfast
 
-This is experimental. It will probably not work on most platforms. Everything needs to be done manually.
+Make [black](https://github.com/ambv/black) faster, with rust. 
 
 # Build Status
 
@@ -52,8 +52,9 @@ Alternatively for 3 and 4 you can use `cargo run <...args>`.
 ## What needs to be done for this to be useful?
 
 - [?] Make it work on Windows/any platform (Maybe done?)
-- [?] Manage starting/running the server automatically. Running `blackfast` should start the server if not running or use an already running one. 
+- [x] Manage starting/running the server automatically. Running `blackfast` should start the server if not running or use an already running one. 
 - [x] Move the socket to a "well known" location (appdirs?cachedir?) so it doesn't need to be provided. This needs to work with more than one black version on a single system.
+- [ ] support multiple versions to be installed/used
 - [x] Make it installable (how to handle the rust part?!)
 - [ ] Handle errors
 - [ ] Add support for styled output
