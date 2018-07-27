@@ -203,14 +203,26 @@ async def api(
 
 if sys.platform == "win32":
 
+    from asyncio.windows_events import CONNECT_PIPE_INIT_DELAY, CONNECT_PIPE_MAX_DELAY
+    import _overlapped
+    import _winapi
+
     def wait_connectable(timeout: Union[int, float]) -> None:
         end = time.monotonic() + timeout
-        while end > time.monotonic():
+        delay = CONNECT_PIPE_INIT_DELAY
+        address = get_pipe_name()
+        while time.monotonic() > end:
             try:
-                with open(get_pipe_name(), "rb+", buffering=0):
-                    return
-            except:
-                pass
+                handle = _overlapped.ConnectPipe(address)
+                _winapi.CloseHandle(handle)
+                return
+            except OSError as exc:
+                if exc.winerror != _overlapped.ERROR_PIPE_BUSY:
+                    raise
+
+            # ConnectPipe() failed with ERROR_PIPE_BUSY: retry later
+            delay = min(delay * 2, CONNECT_PIPE_MAX_DELAY)
+            time.sleep(delay)
         raise Exception("Server did not start")
 
 
