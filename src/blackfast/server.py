@@ -201,17 +201,32 @@ async def api(
     return report.return_code
 
 
-def wait_connectable(timeout: Union[int, float]) -> None:
-    end = time.monotonic() + timeout
-    while end > time.monotonic():
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        try:
-            sock.connect(get_socket_path())
-            sock.close()
-            return
-        except:
-            pass
-    raise Exception("Server did not start")
+if sys.platform == "win32":
+
+    def wait_connectable(timeout: Union[int, float]) -> None:
+        end = time.monotonic() + timeout
+        while end > time.monotonic():
+            try:
+                with open(get_pipe_name(), "rb+", buffering=0):
+                    return
+            except:
+                pass
+        raise Exception("Server did not start")
+
+
+else:
+
+    def wait_connectable(timeout: Union[int, float]) -> None:
+        end = time.monotonic() + timeout
+        while end > time.monotonic():
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                sock.connect(get_socket_path())
+                sock.close()
+                return
+            except:
+                pass
+        raise Exception("Server did not start")
 
 
 def run():
